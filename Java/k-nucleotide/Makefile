@@ -1,14 +1,15 @@
 compile:
-	/usr/local/src/jdk1.8.0_121/bin/javac -d . -cp .:/usr/local/src/java-libs/fastutil-7.0.12.jar knucleotide.java
+	/usr/lib/jvm/java-8-openjdk-amd64/bin/javac -d . -cp .:/usr/local/src/java-libs/fastutil-7.0.12.jar knucleotide.java
+
 measure:
 	sudo modprobe msr
-	sudo ../../RAPL/main "/usr/local/src/jdk1.8.0_121/bin/java  -cp .:/usr/local/src/java-libs/fastutil-7.0.12.jar knucleotide 0 < knucleotide-input25000000.txt" Java k-nucleotide
+	cat knucleotide-input25000000.txt | sudo ../../RAPL/main "/usr/lib/jvm/java-8-openjdk-amd64/bin/java -cp .:/usr/local/src/java-libs/fastutil-7.0.12.jar knucleotide 0" Java k-nucleotide
 
 run:
-	/usr/local/src/jdk1.8.0_121/bin/java  -cp .:/usr/local/src/java-libs/fastutil-7.0.12.jar knucleotide 0 < knucleotide-input25000000.txt
+	cat knucleotide-input25000000.txt | /usr/lib/jvm/java-8-openjdk-amd64/bin/java -cp .:/usr/local/src/java-libs/fastutil-7.0.12.jar knucleotide 0
 
 mem:
-	/usr/local/src/jdk1.8.0_121/bin//usr/bin/time -v  java  -cp .:/usr/local/src/java-libs/fastutil-7.0.12.jar knucleotide 0 < knucleotide-input25000000.txt
+	/usr/bin/time -v sh -c 'cat knucleotide-input25000000.txt | /usr/lib/jvm/java-8-openjdk-amd64/bin/java -cp .:/usr/local/src/java-libs/fastutil-7.0.12.jar knucleotide 0'
 
 valgrind:
-	/usr/local/src/jdk1.8.0_121/bin/valgrind --tool=massif --stacks=yes  java  -cp .:/usr/local/src/java-libs/fastutil-7.0.12.jar knucleotide 0 < knucleotide-input25000000.txt
+	valgrind --tool=massif --stacks=yes --log-file=massif.log /usr/lib/jvm/java-8-openjdk-amd64/bin/java -cp .:/usr/local/src/java-libs/fastutil-7.0.12.jar knucleotide 0 < knucleotide-input25000000.txt
