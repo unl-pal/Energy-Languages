@@ -6,6 +6,9 @@ measure:
 	sudo modprobe msr
 	sudo ../../RAPL/main "/usr/lib/jvm/java-8-openjdk-amd64/bin/java -cp . fasta 25000000" Java fasta
 
+        sudo perf stat -e power/energy-pkg/ /usr/lib/jvm/java-8-openjdk-amd64/bin/java -cp . fasta 25000000
+
+
 run:
 	/usr/lib/jvm/java-8-openjdk-amd64/bin/java -cp . fasta 25000000
 
