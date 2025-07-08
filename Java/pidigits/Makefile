@@ -1,16 +1,22 @@
 compile:
 	cp pidigits.java-2.java pidigits.java
-	/usr/local/src/jdk1.8.0_121/bin/javac -d .  pidigits.java
-xmeasure:
-	sudo modprobe msr
-	sudo ../../RAPL/main "/usr/local/src/jdk1.8.0_121/bin/java -Djava.library.path=Include/java  pidigits 10000" Java pidigits
+	javac pidigits.java
+
+native:
+	javac -h . GmpInteger.java
+	gcc -I. \
+	    -I/usr/lib/jvm/java-8-openjdk-amd64/include \
+	    -I/usr/lib/jvm/java-8-openjdk-amd64/include/linux \
+	    -L. -fPIC -shared -o libjgmplib.so jgmplib.c -lgmp
 
 run:
-	/usr/local/src/jdk1.8.0_121/bin/java -Djava.library.path=Include/java  pidigits 10000
+	LD_LIBRARY_PATH=. /usr/lib/jvm/java-8-openjdk-amd64/bin/java \
+	    -Djava.library.path=. \
+	    pidigits 10000
+
+measure:
+	sudo modprobe msr
+	sudo ../../RAPL/main "LD_LIBRARY_PATH=. /usr/lib/jvm/java-8-openjdk-amd64/bin/java -Djava.library.path=. pidigits 10000" Java pidigits
 
 mem:
-	/usr/bin/time -v /usr/local/src/jdk1.8.0_121/bin/java -Djava.library.path=Include/java  pidigits 10000
-
-valgrind:
-	valgrind --tool=massif --stacks=yes /usr/local/src/jdk1.8.0_121/bin/java -Djava.library.path=Include/java  pidigits 10000
-
+	/usr/bin/time -v LD_LIBRARY_PATH=. /usr/lib/jvm/java-8-openjdk-amd64/bin/java -Djava.library.path=. pidigits 10000
