@@ -108,9 +108,9 @@ def offset_momentum(ref, bodies=SYSTEM, px=0.0, py=0.0, pz=0.0):
 
 def main(n, ref='sun'):
     offset_momentum(BODIES[ref])
-    report_energy()
+    print("%.9f" % report_energy())
     advance(0.01, n)
-    report_energy()
+    print("%.9f" % report_energy())
 
 if __name__ == '__main__':
     main(int(sys.argv[1]))
