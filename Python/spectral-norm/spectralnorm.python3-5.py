@@ -16,16 +16,16 @@ from sys             import argv
 def eval_A (i, j):
     return 1.0 / ((i + j) * (i + j + 1) / 2 + i + 1)
 
-def eval_A_times_u (u):
-    args = ((i,u) for i in range(len(u)))
+def eval_A_times_u(u, pool):
+    args = ((i, u) for i in range(len(u)))
     return pool.map(part_A_times_u, args)
 
-def eval_At_times_u (u):
-    args = ((i,u) for i in range(len(u)))
+def eval_At_times_u(u, pool):
+    args = ((i, u) for i in range(len(u)))
     return pool.map(part_At_times_u, args)
 
-def eval_AtA_times_u (u):
-    return eval_At_times_u (eval_A_times_u (u))
+def eval_AtA_times_u(u, pool):
+    return eval_At_times_u(eval_A_times_u(u, pool), pool)
 
 def part_A_times_u(xxx_todo_changeme):
     (i,u) = xxx_todo_changeme
@@ -42,20 +42,10 @@ def part_At_times_u(xxx_todo_changeme1):
     return partial_sum
 
 def main():
-    n = int(argv[1])
-    u = [1] * n
-
-    for dummy in range (10):
-        v = eval_AtA_times_u (u)
-        u = eval_AtA_times_u (v)
-
-    vBv = vv = 0
-
-    for ue, ve in zip (u, v):
-        vBv += ue * ve
-        vv  += ve * ve
-
-    print("%0.9f" % (sqrt(vBv/vv)))
+   with Pool(processes=4) as pool:
+    for _ in range(10):
+        v = eval_AtA_times_u(u, pool)
+        u = eval_AtA_times_u(v, pool)
 
 if __name__ == '__main__':
     pool = Pool(processes=4)
