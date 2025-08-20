@@ -1,213 +1,4 @@
-# # # test.py
-# # import os
-# # import time
-# # import importlib
-# # import itertools as it
-# # from math import factorial
-# # from itertools import islice
-# # import pytest
 
-# # # ---- dynamic import: set MODULE_NAME in env (default to optimized_code) ----
-# # MODULE_NAME = os.getenv("MODULE_NAME", "optimized_code")
-# # M = importlib.import_module(MODULE_NAME)
-
-
-# # # ---- register custom marker to avoid warnings ----
-# # def pytest_configure(config):
-# #     config.addinivalue_line("markers", "perf: performance smoke tests")
-
-
-# # # ---- helpers (reference calculations) --------------------------------------
-
-# # def py_perms(iterable):
-# #     """Python's lexicographic permutations (set-checks only)."""
-# #     return it.permutations(iterable)
-
-# # def altern_sum_and_max_for_slice_module_order(n: int, start: int, size: int):
-# #     """
-# #     Compute checksum and max flips *in the module's own order*
-# #     so order-dependent checks compare apples-to-apples.
-# #     """
-# #     gen = M.alternating_flips_generator(n, start, size)
-# #     s = sum(islice(gen, size))
-# #     mx = next(gen)
-# #     return s, mx
-
-
-# # # ---- tests -----------------------------------------------------------------
-
-# # def test_permutations_even_start_required_and_yields_for_size1():
-# #     """Odd starts should trip module's internal assert; even start should yield one perm when size==1."""
-# #     n = 5
-
-# #     # Odd starts -> AssertionError (module contract)
-# #     for start in [1, 3, 5]:
-# #         with pytest.raises(AssertionError):
-# #             _ = next(M.permutations(n, start, 1))
-
-# #     # Even start, size==1 -> yields a single permutation of length n
-# #     p = next(M.permutations(n, 0, 1))
-# #     assert isinstance(p, (list, bytearray))
-# #     assert len(p) == n
-# #     assert sorted(p) == list(range(n))
-
-
-# # def test_full_enumeration_matches_set_of_all_perms_n5():
-# #     """
-# #     Order may differ, but the *set* must match all permutations for n=5.
-# #     Uses module generator (start=0, size=n!) and compares as sets of strings.
-# #     """
-# #     n = 5
-# #     total = factorial(n)  # 120 (even)
-# #     module_perms = list(islice(M.permutations(n, 0, total), total))
-# #     got = sorted("".join(str(x) for x in p) for p in module_perms)
-# #     ref = sorted("".join(str(x) for x in p) for p in py_perms(range(n)))
-# #     assert got == ref
-
-
-# # def test_alternating_flips_generator_matches_reference_small():
-# #     """
-# #     Compare module's alternating_flips_generator against a like-for-like reference
-# #     computed in the *module's own order* on a small slice.
-# #     """
-# #     n, start, size = 5, 7, 20
-# #     # Module requires even start and even size for multi-yield paths:
-# #     start -= (start % 2)        # make even (7 -> 6)
-# #     size += (size % 2)          # ensure even
-
-# #     it_mod = M.alternating_flips_generator(n, start, size)
-# #     module_sum = sum(islice(it_mod, size))
-# #     module_max = next(it_mod)
-
-# #     ref_sum, ref_max = altern_sum_and_max_for_slice_module_order(n, start, size)
-# #     assert module_sum == ref_sum
-# #     assert module_max == ref_max
-
-
-# # def test_task_matches_reference_on_slices():
-# #     """task(n, start, size) should match a module-order reference for several slices."""
-# #     n = 5
-# #     for start, size in [(0, 10), (10, 10), (40, 20)]:
-# #         start -= (start % 2)   # even start
-# #         size += (size % 2)     # even size
-
-# #         mod_sum, mod_max = M.task(n, start, size)
-# #         ref_sum, ref_max = altern_sum_and_max_for_slice_module_order(n, start, size)
-# #         assert mod_sum == ref_sum
-# #         assert mod_max == ref_max
-
-
-# # def test_fannkuch_singleprocess_output_and_values(monkeypatch, capsys):
-# #     """
-# #     Force single-process path and verify printed checksum + max are consistent
-# #     with a module-order reference over the full space for n=6.
-# #     """
-# #     n = 6  # 720 perms -> quick
-# #     monkeypatch.setattr(M, "cpu_count", lambda: 1)  # force single-process
-
-# #     M.fannkuch(n)
-# #     out = capsys.readouterr().out.strip().splitlines()
-# #     assert len(out) == 2
-# #     checksum_line, pf_line = out
-
-# #     # Parse printed values
-# #     checksum = int(checksum_line)
-# #     assert pf_line.startswith(f"Pfannkuchen({n}) = ")
-# #     max_flips = int(pf_line.split(" = ")[1])
-
-# #     # Compare to module-order reference over full space
-# #     total = factorial(n)
-# #     exp_sum, exp_max = altern_sum_and_max_for_slice_module_order(n, 0, total)
-# #     assert checksum == exp_sum
-# #     assert max_flips == exp_max
-
-
-# # def test_negative_n_prints_all_permutations_order_agnostic(capsys):
-# #     """
-# #     For n < 0, function prints all permutations (1-based). Order can differ,
-# #     so compare sets.
-# #     """
-# #     n = -3
-# #     M.fannkuch(n)
-# #     out = capsys.readouterr().out.strip().splitlines()
-
-# #     assert len(out) == factorial(-n)
-# #     got = sorted(out)
-# #     ref = sorted("".join(str(x + 1) for x in p) for p in py_perms(range(-n)))
-# #     assert got == ref
-
-
-# # # ---- optional performance smoke test (median across repeats) --------------
-
-# # @pytest.mark.perf
-# # def test_perf_small_ns(capsys):
-# #     """
-# #     Tiny perf smoke to compare runs within a module. Use:
-# #       pytest -q -s -m perf test.py
-# #     """
-# #     ns = [8, 9, 10]
-# #     repeats = int(os.getenv("PERF_REPEATS", "5"))
-# #     print(f"[perf] MODULE={M.__name__}  ns={ns}  repeats={repeats}")
-
-# #     stats = []
-# #     for n in ns:
-# #         times = []
-# #         for r in range(repeats):
-# #             t0 = time.perf_counter()
-# #             M.fannkuch(n)
-# #             _ = capsys.readouterr()  # clear printed output
-# #             dt = time.perf_counter() - t0
-# #             times.append(dt)
-# #             print(f"[perf] n={n} run={r+1}/{repeats} time={dt:.3f}s")
-# #         times_sorted = sorted(times)
-# #         median = times_sorted[len(times)//2] if repeats % 2 == 1 else \
-# #             0.5 * (times_sorted[repeats//2 - 1] + times_sorted[repeats//2])
-# #         mean = sum(times) / repeats
-# #         # sample stdev (unbiased) if repeats>1
-# #         if repeats > 1:
-# #             var = sum((x - mean) ** 2 for x in times) / (repeats - 1)
-# #             sd = var ** 0.5
-# #         else:
-# #             sd = 0.0
-# #         print(f"[perf] n={n} median={median:.3f}s mean={mean:.3f}s stdev={sd:.3f}s")
-# #         stats.append((n, median, mean, sd))
-
-# #     # final summary (no assertion; this is just informational)
-# #     human = ", ".join(
-# #         f"n={n}: median={med:.3f}s (mean={mean:.3f}s, sd={sd:.3f}s)"
-# #         for (n, med, mean, sd) in stats
-# #     )
-# #     print(f"[perf][summary] {human}")
-# # test_fannkuch_perf.py
-
-# import time
-# import pytest
-
-# import optimized_code as M  # Switch between `fannkuchredux` and `optimized_code` manually
-
-# @pytest.mark.perf
-# def test_fannkuch_large_params():
-#     ns = [8, 9, 10]  # Try increasing up to 12 if it runs in reasonable time
-#     repeats = 2
-
-#     print(f"[perf] MODULE={M.__name__}  ns={ns}  repeats={repeats}")
-
-#     for n in ns:
-#         times = []
-#         for r in range(repeats):
-#             start = time.perf_counter()
-#             M.fannkuch(n)
-#             end = time.perf_counter()
-#             t = end - start
-#             times.append(t)
-#             print(f"[perf] n={n} run={r+1}/{repeats} time={t:.3f}s")
-
-#         median = sorted(times)[len(times) // 2]
-#         mean = sum(times) / len(times)
-#         stdev = (sum((x - mean) ** 2 for x in times) / len(times)) ** 0.5
-#         print(f"[perf] n={n} median={median:.3f}s mean={mean:.3f}s stdev={stdev:.3f}s")
-
-# test.py
 import os
 import time
 import importlib
@@ -354,8 +145,8 @@ def test_perf_small_progression():
     Extend via env:
       PERF_NS="8,9,10,11"  PERF_REPEATS=5  MODULE_NAME=optimized_code  python -m pytest -q -s test.py
     """
-    ns_env = os.getenv("PERF_NS", "8,9,10")
-    repeats = int(os.getenv("PERF_REPEATS", "3"))
+    ns_env = os.getenv("PERF_NS", "8,9,10,11")
+    repeats = int(os.getenv("PERF_REPEATS", "1"))
     ns = [int(x.strip()) for x in ns_env.split(",") if x.strip()]
   
 
@@ -379,3 +170,54 @@ def test_perf_small_progression():
         else:
             sd = 0.0
         print(f"[perf] n={n} median={median:.3f}s mean={m:.3f}s stdev={sd:.3f}s")
+
+def test_multiprocess_vs_singleprocess_parity(monkeypatch):
+    import importlib as _imp
+    import optimized_code as M
+
+    # single-process
+    monkeypatch.setattr(M, "cpu_count", lambda: 1)
+    from io import StringIO
+    import sys
+    buf1 = StringIO()
+    old = sys.stdout; sys.stdout = buf1
+    M.fannkuch(8)
+    sys.stdout = old
+    out1 = buf1.getvalue()
+
+    # multiprocess (force >1 cores)
+    monkeypatch.setattr(M, "cpu_count", lambda: 4)
+    buf2 = StringIO()
+    sys.stdout = buf2
+    M.fannkuch(8)
+    sys.stdout = old
+    out2 = buf2.getvalue()
+
+    assert out1 == out2
+
+def test_tail_truncation_slice():
+    import optimized_code as M
+    from math import factorial
+    from itertools import islice
+
+    n = 7
+    total = factorial(n)
+    remaining = 6
+    start = total - remaining     # even start
+    size = remaining              # <= n! - start
+
+    s1, m1 = M.task(n, start, size)
+
+    perms = list(islice(M.permutations(n, start, size), size))
+    alt = 1  # start is even
+    ref_sum = ref_max = 0
+    for p in perms:
+        q = list(p); flips = 0
+        while q[0] != 0:
+            q[:q[0]+1] = q[q[0]::-1]
+            flips += 1
+        ref_sum += alt * flips
+        ref_max = max(ref_max, flips)
+        alt = -alt
+
+    assert (s1, m1) == (ref_sum, ref_max)
