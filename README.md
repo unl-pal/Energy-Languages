@@ -49,7 +49,3 @@ The original Energy-Languages repository and benchmark framework are available f
 ```text
 https://github.com/greensoftwarelab/Energy-Languages
 ```
-
-## Acknowledgment
-
-This benchmark suite is based on the Energy-Languages benchmark from the Green Software Lab, which uses programs from the Computer Language Benchmark Game.
