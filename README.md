@@ -4,16 +4,6 @@ This repository contains the microbenchmark suite used in the GreenRepo evaluati
 
 For GreenRepo, we use only the Python and Java versions of the 10 benchmark programs. We modified the benchmark setup to support GreenRepo's optimization and validation workflow.
 
-## What is included
-
-This repository contains:
-
-```text
-Python/     # Python implementations of the 10 microbenchmarks
-Java/       # Java implementations of the 10 microbenchmarks
-gen-input.sh
-```
-
 The 10 benchmark programs are:
 
 ```text
@@ -41,7 +31,6 @@ Compared with the original Energy-Languages repository, this version was adapted
 The goal of these changes is to make the microbenchmarks usable as a controlled evaluation dataset for LLM-based energy optimization.
 
 
-
 ## Running benchmark tests
 
 The benchmark tests are used by GreenRepo to check whether an optimized version still preserves the expected behavior.
@@ -51,21 +40,6 @@ To run the test target manually:
 ```bash
 make test
 ```
-
-For example:
-
-```bash
-cd Python/fasta
-make test
-```
-
-or:
-
-```bash
-cd Java/fasta
-make test
-```
-
 ## Notes
 
 This repository is not intended to reproduce the full Energy-Languages study across all 28 languages. Instead, it contains the Python and Java microbenchmarks adapted for GreenRepo's evaluation workflow.
