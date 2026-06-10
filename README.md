@@ -40,77 +40,7 @@ Compared with the original Energy-Languages repository, this version was adapted
 
 The goal of these changes is to make the microbenchmarks usable as a controlled evaluation dataset for LLM-based energy optimization.
 
-## Repository structure
 
-The relevant folder structure is:
-
-```text
-Python/
-  binary-trees/
-  fannkuch-redux/
-  fasta/
-  k-nucleotide/
-  mandelbrot/
-  n-body/
-  pidigits/
-  regex-redux/
-  reverse-complement/
-  spectral-norm/
-
-Java/
-  binary-trees/
-  fannkuch-redux/
-  fasta/
-  k-nucleotide/
-  mandelbrot/
-  n-body/
-  pidigits/
-  regex-redux/
-  reverse-complement/
-  spectral-norm/
-
-gen-input.sh
-```
-
-Each benchmark directory contains the benchmark source code, a Makefile, and the test files needed by GreenRepo.
-
-## Generating benchmark inputs
-
-Some benchmarks require input files. Generate them by running:
-
-```bash
-./gen-input.sh
-```
-
-This creates the input files used by benchmarks such as:
-
-```text
-k-nucleotide
-regex-redux
-reverse-complement
-```
-
-## Running a benchmark manually
-
-Each benchmark directory contains a Makefile. To run a benchmark manually, go to the benchmark directory and run:
-
-```bash
-make run
-```
-
-For example:
-
-```bash
-cd Python/binary-trees
-make run
-```
-
-or:
-
-```bash
-cd Java/binary-trees
-make run
-```
 
 ## Running benchmark tests
 
@@ -135,28 +65,6 @@ or:
 cd Java/fasta
 make test
 ```
-
-A benchmark is considered valid for GreenRepo only if its test target passes before optimization.
-
-## Use with GreenRepo
-
-GreenRepo uses this repository as the microbenchmark dataset. For each benchmark, GreenRepo:
-
-1. Starts from the original benchmark implementation.
-2. Sends source files to the selected LLM for optimization.
-3. Runs the benchmark's test workload to validate correctness.
-4. Keeps only optimized code that passes validation.
-5. Measures the energy consumption of the original version and the optimized version using `perf stat`.
-6. Computes the energy improvement from the mean of five measurements for each version.
-
-The energy improvement is computed as:
-
-```text
-Improvement =
-(Energy_original - Energy_optimized) / Energy_original * 100
-```
-
-A positive value means that the optimized version consumed less energy than the original version.
 
 ## Notes
 
