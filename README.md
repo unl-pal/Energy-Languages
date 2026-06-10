@@ -1,162 +1,173 @@
-# Energy Efficiency in Programming Languages
-#### Checking Energy Consumption in Programming Languages Using the _Computer Language Benchmark Game_ as a case study.
+# GreenRepo Microbenchmark Suite
 
-### What is this?
+This repository contains the microbenchmark suite used in the GreenRepo evaluation. It is based on the Energy-Languages benchmark from the Green Software Lab, which provides 10 benchmark programs from the Computer Language Benchmark Game across multiple programming languages.
 
-This repo contains the source code of 10 distinct benchmarks, implemented in 28 different languages (exactly as taken from the [Computer Language Benchmark Game](https://benchmarksgame-team.pages.debian.net/benchmarksgame/)).
+For GreenRepo, we use only the Python and Java versions of the 10 benchmark programs. We modified the benchmark setup to support GreenRepo's optimization and validation workflow.
 
-It also contains tools which provide support, for each benchmark of each language, to 4 operations: *(1)* **compilation**, *(2)* **execution**, *(3)* **energy measuring** and *(4)* **memory peak detection**.
+## What is included
 
-### How is it structured and hows does it work?
+This repository contains:
 
-This framework follows a specific folder structure, which guarantees the correct workflow when the goal is to perform and operation for all benchmarks at once.
-Moreover, it must be defined, for each benchmark, how to perform the 4 operations considered.
-
-Next, we explain the folder structure and how to specify, for each language benchmark, the execution of each operation.
-
-#### The Structure
-The main folder contains 32 elements: 
-1. 28 sub-folders (one for each of the considered languages); each folder contains a sub-folder for each considered benchmark.
-2. A `Python` script `compile_all.py`, capable of building, running and measuring the energy and memory usage of every benchmark in all considered languages.
-3. A `RAPL` sub-folder, containing the code of the energy measurement framework.
-4. A `Bash` script `gen-input.sh`, used to generate the input files for 3 benchmarks: `k-nucleotide`, `reverse-complement`, and `regex-redux`.
-
-Basically, the directories tree will look something like this:
-
-```Java
-| ...
-| <Language-1>
-	| <benchmark-1>
-		| <source>
-		| Makefile
-		| [input]
-	| ...
-	| <benchmark-i>
-		| <source>
-		| Makefile
-		| [input]
-| ...
-| <Language-i>
-	| <benchmark-1>
-	| ...
-	| <benchmark-i>
-| RAPL
-| compile_all.py
-| gen-input.sh
-
+```text
+Python/     # Python implementations of the 10 microbenchmarks
+Java/       # Java implementations of the 10 microbenchmarks
+gen-input.sh
 ```
 
-Taking the `C` language as an example, this is how the folder for the `binary-trees` and `k-nucleotide` benchmarks would look like:
+The 10 benchmark programs are:
 
-```Java
-| ...
-| C
-	| binary-trees
-		| binarytrees.gcc-3.c
-		| Makefile
-	| k-nucleotide
-		| knucleotide.c
-		| knucleotide-input25000000.txt
-		| Makefile
-	| ...
-| ...
-
+```text
+binary-trees
+fannkuch-redux
+fasta
+k-nucleotide
+mandelbrot
+n-body
+pidigits
+regex-redux
+reverse-complement
+spectral-norm
 ```
 
-#### The Operations
+## Changes made for GreenRepo
 
-Each benchmark sub-folder, included in a language folder, contains a `Makefile`.
-This is the file where is stated how to perform the 4 supported operations: *(1)* **compilation**, *(2)* **execution**, *(3)* **energy measuring** and *(4)* **memory peak detection**.
+Compared with the original Energy-Languages repository, this version was adapted for GreenRepo in the following ways:
 
-Basically, each `Makefile` **must** contains 4 rules, one for each operations:
+1. We focus only on the Python and Java implementations, since these are the two languages currently supported by GreenRepo.
+2. We updated the Makefiles used by the Python and Java benchmarks.
+3. We added test files for the microbenchmarks so that GreenRepo can validate functional correctness after optimization.
+4. The Makefiles are used to run the benchmark workload for both the original version and the optimized version during GreenRepo evaluation.
 
-| Rule | Description |
-| -------- | -------- |
-| `compile` | This rule specifies how the benchmark should be compiled in the considered language; Interpreted languages don't need it, so it can be left blank in such cases. |
-| `run` | This rule specifies how the benchmark should be executed; It is used to test whether the benchmark runs with no errors, and the output is the expected. |
-| `measure` | This rule shows how to use the framework included in the `RAPL` folder to measure the energy of executing the task specified in the `run` rule. |
-| `mem` | Similar to `measure`, this rule executes the task specified in the `run` rule but with support for memory peak detection. |
+The goal of these changes is to make the microbenchmarks usable as a controlled evaluation dataset for LLM-based energy optimization.
 
-To better understand it, here's the `Makefile` for the `binary-trees` benchmark in the `C` language:
+## Repository structure
 
-```Makefile
-compile:
-	/usr/bin/gcc -pipe -Wall -O3 -fomit-frame-pointer -march=native -fopenmp -D_FILE_OFFSET_BITS=64 -I/usr/include/apr-1.0 binarytrees.gcc-3.c -o binarytrees.gcc-3.gcc_run -lapr-1 -lgomp -lm
-	
-measure:
-	sudo ../../RAPL/main "./binarytrees.gcc-3.gcc_run 21" C binary-trees
+The relevant folder structure is:
 
-run:
-	./binarytrees.gcc-3.gcc_run 21
+```text
+Python/
+  binary-trees/
+  fannkuch-redux/
+  fasta/
+  k-nucleotide/
+  mandelbrot/
+  n-body/
+  pidigits/
+  regex-redux/
+  reverse-complement/
+  spectral-norm/
 
-mem:
-	/usr/bin/time -v ./binarytrees.gcc-3.gcc_run 21
+Java/
+  binary-trees/
+  fannkuch-redux/
+  fasta/
+  k-nucleotide/
+  mandelbrot/
+  n-body/
+  pidigits/
+  regex-redux/
+  reverse-complement/
+  spectral-norm/
 
+gen-input.sh
 ```
 
-### Running an example.
+Each benchmark directory contains the benchmark source code, a Makefile, and the test files needed by GreenRepo.
 
-*First things first:* We must give sudo access to the energy registers for RAPL to access
-```
-sudo modprobe msr
-```
-and then generate the input files, like this
-```Makefile
+## Generating benchmark inputs
+
+Some benchmarks require input files. Generate them by running:
+
+```bash
 ./gen-input.sh
 ```
-This will generate the necessary input files, and are valid for every language.
 
-We included a main Python script, `compile_all.py`, that you can either call from the main folder or from inside a language folder, and it can be executed as follows:
+This creates the input files used by benchmarks such as:
 
-```PowerShell
-python compile_all.py [rule]
+```text
+k-nucleotide
+regex-redux
+reverse-complement
 ```
 
-You can provide a rule from the available 4 referenced before, and the script will perform it using **every** `Makefile` found in the same folder level and bellow.
+## Running a benchmark manually
 
-The default rule is `compile`, which means that if you run it with no arguments provided (`python compile_all.py`) the script will try to compile all benchmarks.
+Each benchmark directory contains a Makefile. To run a benchmark manually, go to the benchmark directory and run:
 
-The results of the energy measurements will be stored in files with the name `<language>.csv`, where `<language>` is the name of the running language. 
-You will find such file inside of corresponding language folder.
+```bash
+make run
+```
 
-Each <language>.csv will contain a line with the following: 
+For example:
 
-```benchmark-name ; PKG (Joules) ; CPU (J) ; GPU (J) ; DRAM (J) ; Time (ms)```
+```bash
+cd Python/binary-trees
+make run
+```
 
-Do note that the availability of GPU/DRAM measurements depend on your machine's architecture. These are requirements from RAPL itself.
+or:
 
-### Add your own example!
-#### Wanna know your own code's energy behavior? We can help you!
-#### Follow this steps:
+```bash
+cd Java/binary-trees
+make run
+```
 
-##### 1. Create a folder with the name of you benchmark, such as `test-benchmark`, inside the language you implemented it.
+## Running benchmark tests
 
-##### 2. Follow the instructions presented in the [Operations](#the-operations) section, and fill the `Makefile`.
+The benchmark tests are used by GreenRepo to check whether an optimized version still preserves the expected behavior.
 
-##### 3. Use the `compile_all.py` script to compile, run, and/or measure what you want! Or run it yourself using the [`make`](https://linux.die.net/man/1/make) command.
+To run the test target manually:
 
-### Further Reading
-Wanna know more? Check [this website](https://sites.google.com/view/energy-efficiency-languages)!
+```bash
+make test
+```
 
-There you can find the results of a successful experimental setup using the contents of this repo, and the used machine and compilers specifications.
+For example:
 
-You can also find there the paper which include such results and our discussion on them:
+```bash
+cd Python/fasta
+make test
+```
 
->**"_Energy Efficiency across Programming Languages: How does Energy, Time and Memory Relate?_"**, 
->Rui Pereira, Marco Couto, Francisco Ribeiro, Rui Rua, Jácome Cunha, João Paulo Fernandes, and João Saraiva. 
->In *Proceedings of the 10th International Conference on Software Language Engineering (SLE '17)*
+or:
 
-#### IMPORTANT NOTE:
-The `Makefiles` have specified, for some cases, the path for the language's compiler/runner. 
-It is most likely that you will not have them in the same path of your machine.
-If you would like to properly test every benchmark of every language, please make sure you have all compilers/runners installed, and adapt the `Makefiles` accordingly.
+```bash
+cd Java/fasta
+make test
+```
 
-### Contacts and References
+A benchmark is considered valid for GreenRepo only if its test target passes before optimization.
 
-[Green Software Lab](http://greenlab.di.uminho.pt)
+## Use with GreenRepo
 
-Main contributors: [@Marco Couto](http://github.com/MarcoCouto) and [@Rui Pereira](http://haslab.uminho.pt/ruipereira)
+GreenRepo uses this repository as the microbenchmark dataset. For each benchmark, GreenRepo:
 
+1. Starts from the original benchmark implementation.
+2. Sends source files to the selected LLM for optimization.
+3. Runs the benchmark's test workload to validate correctness.
+4. Keeps only optimized code that passes validation.
+5. Measures the energy consumption of the original version and the optimized version using `perf stat`.
+6. Computes the energy improvement from the mean of five measurements for each version.
 
-[The Computer Language Benchmark Game](https://benchmarksgame-team.pages.debian.net/benchmarksgame/)
+The energy improvement is computed as:
 
+```text
+Improvement =
+(Energy_original - Energy_optimized) / Energy_original * 100
+```
+
+A positive value means that the optimized version consumed less energy than the original version.
+
+## Notes
+
+This repository is not intended to reproduce the full Energy-Languages study across all 28 languages. Instead, it contains the Python and Java microbenchmarks adapted for GreenRepo's evaluation workflow.
+
+The original Energy-Languages repository and benchmark framework are available from the Green Software Lab:
+
+```text
+https://github.com/greensoftwarelab/Energy-Languages
+```
+
+## Acknowledgment
+
+This benchmark suite is based on the Energy-Languages benchmark from the Green Software Lab, which uses programs from the Computer Language Benchmark Game.
