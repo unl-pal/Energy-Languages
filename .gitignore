@@ -1,8 +1,0 @@
-*tmp
-.tmp*
-tmp.*
-.NETCore*
-*.class
-lshw
-sysinfo.*
-
